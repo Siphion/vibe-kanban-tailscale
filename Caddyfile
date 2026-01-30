@@ -10,9 +10,9 @@
 
 		authentication portal myportal {
 			crypto default token lifetime 86400
-			crypto key sign-verify {env.JWT_SHARED_KEY}
+			crypto key sign-verify {$JWT_SHARED_KEY}
 			enable identity store localdb
-			cookie domain {env.TS_HOSTNAME}
+			cookie domain {$TS_HOSTNAME}
 			cookie lifetime 86400
 			ui {
 				links {
@@ -26,15 +26,15 @@
 		}
 
 		authorization policy mypolicy {
-			set auth url https://{env.TS_HOSTNAME}/auth/
+			set auth url https://{$TS_HOSTNAME}/auth/
 			allow roles authp/admin authp/user
-			crypto key verify {env.JWT_SHARED_KEY}
+			crypto key verify {$JWT_SHARED_KEY}
 		}
 
 		authorization policy codepolicy {
-			set auth url https://{env.TS_HOSTNAME}:8443/auth/
+			set auth url https://{$TS_HOSTNAME}:8443/auth/
 			allow roles authp/admin authp/user
-			crypto key verify {env.JWT_SHARED_KEY}
+			crypto key verify {$JWT_SHARED_KEY}
 		}
 	}
 }
