@@ -6,7 +6,7 @@ TAILSCALE_CLI="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
 CADDY_BIN="$BASE_DIR/caddy"
 
 # --- Tailscale Serve ---
-if "$TAILSCALE_CLI" serve status 2>/dev/null | grep -q "443"; then
+if "$TAILSCALE_CLI" serve status 2>/dev/null | grep -qE "443|8443"; then
     "$TAILSCALE_CLI" serve reset
     echo "[OK] Tailscale Serve reset"
 else
@@ -27,4 +27,12 @@ if pgrep -f "vibe-kanban" > /dev/null 2>&1; then
     echo "[OK] Vibe Kanban stopped"
 else
     echo "[--] Vibe Kanban not running"
+fi
+
+# --- code-server ---
+if pgrep -f "code-server" > /dev/null 2>&1; then
+    pkill -f "code-server"
+    echo "[OK] code-server stopped"
+else
+    echo "[--] code-server not running"
 fi

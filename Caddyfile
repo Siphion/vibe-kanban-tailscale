@@ -30,6 +30,12 @@
 			allow roles authp/admin authp/user
 			crypto key verify {env.JWT_SHARED_KEY}
 		}
+
+		authorization policy codepolicy {
+			set auth url https://{env.TS_HOSTNAME}:8443/auth/
+			allow roles authp/admin authp/user
+			crypto key verify {env.JWT_SHARED_KEY}
+		}
 	}
 }
 
@@ -43,5 +49,18 @@
 	route /* {
 		authorize with mypolicy
 		reverse_proxy 127.0.0.1:38100
+	}
+}
+
+:8444 {
+	bind 127.0.0.1
+
+	route /auth* {
+		authenticate with myportal
+	}
+
+	route /* {
+		authorize with codepolicy
+		reverse_proxy 127.0.0.1:38200
 	}
 }

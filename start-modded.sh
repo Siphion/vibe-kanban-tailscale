@@ -37,6 +37,12 @@ if [ ! -f "$VK_MODDED_DIR/npx-cli/bin/cli.js" ]; then
     exit 1
 fi
 
+# Verify code-server is installed
+if ! command -v code-server &>/dev/null; then
+    echo "[!] ERROR: code-server not found. Install it with: brew install code-server"
+    exit 1
+fi
+
 mkdir -p "$LOGS_DIR"
 
 # --- Vibe Kanban (modded) ---
@@ -58,6 +64,26 @@ else
     fi
 fi
 
+# --- code-server (VS Code for the Web) ---
+if pgrep -f "code-server" > /dev/null 2>&1; then
+    echo "[OK] code-server already running (PID $(pgrep -f 'code-server' | head -1))"
+else
+    echo "[*] Starting code-server on 127.0.0.1:38200..."
+    PORT= HOST= nohup code-server \
+        --bind-addr 127.0.0.1:38200 \
+        --auth none \
+        --disable-telemetry \
+        > "$LOGS_DIR/code-server.log" 2>&1 &
+    CS_PID=$!
+    sleep 2
+    if kill -0 "$CS_PID" 2>/dev/null; then
+        echo "[OK] code-server started (PID $CS_PID)"
+    else
+        echo "[!] ERROR: code-server failed to start. Check $LOGS_DIR/code-server.log"
+        exit 1
+    fi
+fi
+
 # --- Caddy (custom build with caddy-security) ---
 if pgrep -f "$CADDY_BIN" > /dev/null 2>&1; then
     echo "[*] Caddy already running, reloading config..."
@@ -75,9 +101,18 @@ echo "[*] Configuring Tailscale Serve..."
     || "$TAILSCALE_CLI" serve --https=443 http://127.0.0.1:8443
 echo "[OK] Tailscale Serve configured (HTTPS:443 → 127.0.0.1:8443)"
 
+# --- Tailscale Serve for code-server (HTTPS:8443 → Caddy :8444) ---
+echo "[*] Configuring Tailscale Serve for code-server..."
+"$TAILSCALE_CLI" serve --bg --https=8443 http://127.0.0.1:8444 2>/dev/null \
+    || "$TAILSCALE_CLI" serve --https=8443 http://127.0.0.1:8444
+echo "[OK] Tailscale Serve configured (HTTPS:8443 → 127.0.0.1:8444)"
+
 echo ""
 echo "=== Running (MODDED) ==="
 echo "Vibe Kanban (mod) : http://127.0.0.1:38100 (local only)"
+echo "code-server       : http://127.0.0.1:38200 (local only)"
 echo "Caddy (auth)      : http://127.0.0.1:8443  (local only)"
-echo "Tailscale (TLS)   : https://$TS_HOSTNAME"
+echo "Caddy (auth/code) : http://127.0.0.1:8444  (local only)"
+echo "Tailscale (VK)    : https://$TS_HOSTNAME"
+echo "Tailscale (Code)  : https://$TS_HOSTNAME:8443"
 echo "Logs              : $LOGS_DIR/"
