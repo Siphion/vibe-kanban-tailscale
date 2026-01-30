@@ -1,0 +1,14 @@
+# Environment variables
+.env
+
+# Logs
+logs/
+
+# TLS certificates
+certs/
+
+# Caddy binary (compiled, platform-specific)
+caddy
+
+# macOS
+.DS_Store
